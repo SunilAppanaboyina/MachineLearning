@@ -1,4 +1,5 @@
 Problem Statement
+
 Country Beeristan, a high potential market, accounts for nearly 10% of Stallion & Co.’s global beer sales. 
 Stallion & Co. has a large portfolio of products distributed to retailers through wholesalers (agencies). 
 There are thousands of unique wholesaler-SKU/products combinations. In order to plan its production and distribution 
@@ -7,6 +8,7 @@ demand at SKU level for each wholesaler.
 Currently demand is estimated by sales executives, who generally have a “feel” for the market and predict the net effect of forces of supply, demand and other external factors based on past experience. The more experienced a sales exec is in a particular market, the better a job he does at estimating. Joshua, the new Head of S&OP for Stallion & Co. just took an analytics course and realized he can do the forecasts in a much more effective way. He approaches you, the best data scientist at Stallion, to transform the exercise of demand forecasting.
 
 Datasets
+
 You are provided with the following data:
 
 price_sales_promotion.csv: ($/hectoliter) Holds the price, sales & promotion in dollar value per hectoliter at Agency-SKU-month level
