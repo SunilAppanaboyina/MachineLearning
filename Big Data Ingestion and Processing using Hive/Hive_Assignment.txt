@@ -1,0 +1,331 @@
+
+/* VERY IMPORTANT */
+/* PLEASE ADD THE BELOW GIVEN PARAMETERS TO /usr/lib/hive/conf/hive-site.xml FILE IN XML FORMAT */
+/* AND THEN STOP AND START hive-server2. ONLY AFTER THIS THE PARTITION TABLE DATA INSERTION STEP WILL WORK */ 
+/* hive.exec.dynamic.partition=true */
+/* hive.exec.dynamic.partition.mode=nonstrict */
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+
+/* Creating external table with the November 2017 file */
+
+drop table yellow_trip_Nov;
+
+create external table if not exists yellow_trip_Nov( 
+VendorID int, tpep_pickup_datetime timestamp,
+tpep_dropoff_datetime timestamp, passenger_count int,
+trip_distance double, RateCodeID int,
+store_and_fwd_flag string, PULocationID int,
+DULocationID int, payment_type int, fare_amount double,
+extra double, mta_tax double, tip_amount double,
+tolls_amount double, improvement_surcharge double, total_amount double) row format delimited fields terminated by ',' location 's3://bigdata-sappanab-s3-oregon/Nov/'
+tblproperties("skip.header.line.count"="2");
+
+/* Creating external table with the December 2017 file */
+
+drop table yellow_trip_Dec;
+
+create external table if not exists yellow_trip_Dec( 
+VendorID int, tpep_pickup_datetime timestamp,
+tpep_dropoff_datetime timestamp, passenger_count int,
+trip_distance double, RateCodeID int,
+store_and_fwd_flag string, PULocationID int,
+DULocationID int, payment_type int, fare_amount double,
+extra double, mta_tax double, tip_amount double,
+tolls_amount double, improvement_surcharge double, total_amount double) row format delimited fields terminated by ',' location 's3://bigdata-sappanab-s3-oregon/Dec/'
+tblproperties("skip.header.line.count"="2");
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 1: How many records has each TPEP provider provided? Write a query that summarises the number of records of each provider */
+/* Assumption: Considering all the records provided in the two csv files */
+
+select VendorID, count(*) as cnt
+from(
+	select VendorID
+	from yellow_trip_Nov
+	union all
+	select VendorID
+	from yellow_trip_Dec
+    )a
+group by VendorID;
+
+/* Result: VendorID 1 has provided 8447149 records and VendorID 2 has provided 10345930 records. */
+
+/* -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 2: The data provided is for months November and December only. Check whether the data is consistent, and if not, identify the data quality issues. Mention all data quality issues in comments */
+/* Checking for which year and months do we have the data  */
+/* November */
+select year(tpep_pickup_datetime) as yr,month(tpep_pickup_datetime) as mnth,count(*) as cnt 
+from yellow_trip_Nov 
+group by year(tpep_pickup_datetime),month(tpep_pickup_datetime)
+order by yr,mnth;
+
+/* Result: we can see that the csv file which supposed to have only data from November 2017, has data from other years and months as well. It also has one record from 2014 which is erroneous*/
+
+/* December */
+select year(tpep_pickup_datetime) as yr,month(tpep_pickup_datetime) as mnth,count(*) as cnt 
+from yellow_trip_Dec 
+group by year(tpep_pickup_datetime),month(tpep_pickup_datetime)
+order by yr,mnth;
+
+/* Result: December 2017 csv file has data from other years and months as well */
+
+/* Checking for fraction of NULLs in each column in November table */
+
+select
+	avg(case when VendorID is null then 1 else 0 end) as VendorID,
+	avg(case when tpep_pickup_datetime is null then 1 else 0 end) as tpep_pickup_datetime,
+	avg(case when tpep_dropoff_datetime is null then 1 else 0 end) as tpep_dropoff_datetime,
+	avg(case when passenger_count is null then 1 else 0 end) as passenger_count,
+	avg(case when trip_distance is null then 1 else 0 end) as trip_distance,
+	avg(case when RateCodeID is null then 1 else 0 end) as RateCodeID,
+	avg(case when store_and_fwd_flag is null then 1 else 0 end) as store_and_fwd_flag,
+	avg(case when PULocationID is null then 1 else 0 end) as PULocationID,
+	avg(case when DULocationID is null then 1 else 0 end) as DULocationID,
+	avg(case when payment_type is null then 1 else 0 end) as payment_type,
+	avg(case when fare_amount is null then 1 else 0 end) as fare_amount,
+	avg(case when extra is null then 1 else 0 end) as extra,
+	avg(case when mta_tax is null then 1 else 0 end) as mta_tax,
+	avg(case when tip_amount is null then 1 else 0 end) as tip_amount,
+	avg(case when tolls_amount is null then 1 else 0 end) as tolls_amount,
+	avg(case when improvement_surcharge is null then 1 else 0 end) as improvement_surcharge,
+	avg(case when total_amount is null then 1 else 0 end) as total_amount
+from yellow_trip_Nov;
+
+/* Result: November csv file has no NULL values */
+
+/* Checking for fraction of NULLs in each column in December table */
+
+select
+	avg(case when VendorID is null then 1 else 0 end) as VendorID,
+	avg(case when tpep_pickup_datetime is null then 1 else 0 end) as tpep_pickup_datetime,
+	avg(case when tpep_dropoff_datetime is null then 1 else 0 end) as tpep_dropoff_datetime,
+	avg(case when passenger_count is null then 1 else 0 end) as passenger_count,
+	avg(case when trip_distance is null then 1 else 0 end) as trip_distance,
+	avg(case when RateCodeID is null then 1 else 0 end) as RateCodeID,
+	avg(case when store_and_fwd_flag is null then 1 else 0 end) as store_and_fwd_flag,
+	avg(case when PULocationID is null then 1 else 0 end) as PULocationID,
+	avg(case when DULocationID is null then 1 else 0 end) as DULocationID,
+	avg(case when payment_type is null then 1 else 0 end) as payment_type,
+	avg(case when fare_amount is null then 1 else 0 end) as fare_amount,
+	avg(case when extra is null then 1 else 0 end) as extra,
+	avg(case when mta_tax is null then 1 else 0 end) as mta_tax,
+	avg(case when tip_amount is null then 1 else 0 end) as tip_amount,
+	avg(case when tolls_amount is null then 1 else 0 end) as tolls_amount,
+	avg(case when improvement_surcharge is null then 1 else 0 end) as improvement_surcharge,
+	avg(case when total_amount is null then 1 else 0 end) as total_amount
+from yellow_trip_Dec;
+
+/* Result: December csv file has no NULL values */
+
+
+select count(*) as err_time_count from yellow_trip_Nov where unix_timestamp(tpep_pickup_datetime)>=unix_timestamp(tpep_dropoff_datetime);
+select count(*) as err_time_count from yellow_trip_Dec where unix_timestamp(tpep_pickup_datetime)>=unix_timestamp(tpep_dropoff_datetime);
+/* Result: There are records in Nov & Dec csv files where the pickup time is greater than or same as dropoff time. These are erroneous records. For furthur analysis records where rides actually happened will be considered. */
+
+select count(*) as err_passenger_count from yellow_trip_Nov where passenger_count<=0;
+select count(*) as err_passenger_count from yellow_trip_Dec where passenger_count<=0;
+/* Result: Nov & Dec csv files have records with 0 in passenger_count column. These are erroneous records as minimum number of passengers travelled must be atleast 1. */
+
+select count(*) as err_trip_dist_count from yellow_trip_Nov where trip_distance<=0;
+select count(*) as err_trip_dist_count from yellow_trip_Dec where trip_distance<=0;
+/* Result: Nov & Dec csv files have records with 0 in trip_distance column. These are erroneous records. */
+
+select count(*) as err_fare_amnt_count from yellow_trip_Nov where fare_amount<=0;
+select count(*) as err_fare_amnt_count from yellow_trip_Dec where fare_amount<=0;
+/* Result: Nov & Dec csv files have records with negative value in fare_amount column. These are erroneous records. */
+
+select count(*) as err_total_amnt_count from yellow_trip_Nov where total_amount<=0;
+select count(*) as err_total_amnt_count from yellow_trip_Dec where total_amount<=0; 
+/* Result: Nov & Dec csv files have records with negative value in total_amount column. These are erroneous records. */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 3: You might have encountered unusual or erroneous rows in the dataset. Can you conclude which vendor is doing a bad job in providing the records? */
+
+select VendorID,count(*) as cnt from yellow_trip_Nov where unix_timestamp(tpep_pickup_datetime)>=unix_timestamp(tpep_dropoff_datetime) or passenger_count<=0 or trip_distance<=0 or fare_amount<=0 or total_amount<=0 group by VendorID order by cnt desc limit 1;
+select VendorID,count(*) as cnt from yellow_trip_Dec where unix_timestamp(tpep_pickup_datetime)>=unix_timestamp(tpep_dropoff_datetime) or passenger_count<=0 or trip_distance<=0 or fare_amount<=0 or total_amount<=0 group by VendorID order by cnt desc limit 1;
+
+/* Result: in both Nov & Dec csv files VendorID 1 has provided the maximum erroneous records */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+
+
+/* For furthur analysis creating a partitioned table based on year and month. The partitioned table is stored in ORC format. */
+/* All the records are inserted into the partitioned table including erroneous records, as in BigData processing records should not be deleted. */
+/* Apropriate filters will be used in queries to ensure accurate results. */
+
+drop table yellow_trip_Nov_Dec_partitioned_orc;
+
+create external table if not exists yellow_trip_Nov_Dec_partitioned_orc(
+VendorID int, tpep_pickup_datetime timestamp,
+tpep_dropoff_datetime timestamp, passenger_count int,
+trip_distance double, RateCodeID int,
+store_and_fwd_flag string, PULocationID int,
+DULocationID int, payment_type int, fare_amount double,
+extra double, mta_tax double, tip_amount double,
+tolls_amount double, improvement_surcharge double, total_amount double) partitioned by (yr int, mnth int) stored as orc location 's3://bigdata-sappanab-s3-oregon/partitioned_orc/'
+tblproperties ("orc.compress"="SNAPPY");
+
+insert overwrite table yellow_trip_Nov_Dec_partitioned_orc partition(yr, mnth)
+select VendorID, tpep_pickup_datetime, tpep_dropoff_datetime, passenger_count,
+trip_distance, RateCodeID, store_and_fwd_flag, PULocationID,
+DULocationID, payment_type, fare_amount, extra, mta_tax, tip_amount,
+tolls_amount, improvement_surcharge, total_amount, year(tpep_pickup_datetime) as yr, month(tpep_pickup_datetime) as mnth
+from yellow_trip_Nov
+union all
+select VendorID, tpep_pickup_datetime, tpep_dropoff_datetime, passenger_count,
+trip_distance, RateCodeID, store_and_fwd_flag, PULocationID,
+DULocationID, payment_type, fare_amount, extra, mta_tax, tip_amount,
+tolls_amount, improvement_surcharge, total_amount, year(tpep_pickup_datetime) as yr, month(tpep_pickup_datetime) as mnth
+from yellow_trip_Dec;
+
+
+/* -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Analysis 1 */
+/* Assignment Question 1: Compare the average fare for November and December */
+
+select mnth,round(avg(fare_amount),2) as Avg_fare from yellow_trip_Nov_Dec_partitioned_orc where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and fare_amount>0 and yr=2017 and mnth in (11,12) group by mnth order by mnth;
+
+/* Result: For Nov 2017 the avg fare is $13.15 and for Dec 2017 the avg fare is $12.95 */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 2: Explore the ‘number of passengers per trip’ - how many trips are made by each level of ‘Passenger_count’? Do most people travel solo or with other people? */
+/* Combining November 2017 and December 2017 data */
+
+select passenger_count, count(*) as cnt
+from (
+	select passenger_count
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and passenger_count>0 and yr=2017 and mnth=11
+	union all
+	select passenger_count
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and passenger_count>0 and yr=2017 and mnth=12
+     )a
+group by passenger_count order by cnt desc;
+
+/* Result: Most people travel solo */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 3: Which is the most preferred mode of payment? */
+/* Combining November 2017 and December 2017 data */
+
+select payment_type, count(*) as cnt
+from (
+	select payment_type
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and yr=2017 and mnth=11
+	union all
+	select payment_type
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and yr=2017 and mnth=12
+     )a
+group by payment_type order by cnt desc;
+
+/* Result: Credit card is the most preferred mode of payment */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 4: What is the average tip paid? Compare the average tip with the 25th, 50th and 75th percentiles and comment whether the ‘average tip’ is a representative statistic (of the central tendency) of ‘tip amount paid’. */
+/* Combining November 2017 and December 2017 data */
+
+select round(avg(tip_amount),2) as avg_tip,round(percentile_approx(tip_amount,0.25),2) as percentile_25,round(percentile_approx(tip_amount,0.5),2) as percentile_50, round(percentile_approx(tip_amount,0.75),2) as percentile_75
+from (
+	select tip_amount
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and tip_amount>0 and yr=2017 and mnth=11
+	union all
+	select tip_amount
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and tip_amount>0 and yr=2017 and mnth=12
+     )a;
+
+/* Result: Average tip is not a representative of the central tendency */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 5: Explore the ‘Extra’ (charge) variable - what is the fraction of total trips where an extra charge is levied? */
+/* Combining November 2017 and December 2017 data */
+
+select round(sum(if(extra>0,1,0))/count(*),2) as fraction_of_total_trips 
+from (
+	select extra
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and yr=2017 and mnth=11
+	union all
+	select extra
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and yr=2017 and mnth=12
+     )a;
+
+/* Result: 46% of the trips levied extra charge */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+/* Analysis 2 */
+/* Assignment Question 1:  What is the correlation between the number of passengers and tip paid? Do multiple travellers pay more compared to solo travellers? */
+/* Combining November 2017 and December 2017 data */
+
+select round(corr(passenger_count,tip_amount),2) as correlation
+from (
+	select passenger_count,tip_amount
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and passenger_count>0 and tip_amount>0 and yr=2017 and mnth=11
+	union all
+	select passenger_count,tip_amount
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and passenger_count>0 and tip_amount>0 and yr=2017 and mnth=12
+     )a;
+
+/* Result: The correlation is 1%. Which means there is no relation between passenger_count and tip_amount */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 2: Create five buckets of ‘tip paid’: [0-5), [5-10), [10-15) , [15-20) and >=20. Calculate the percentage share of each bucket (i.e. the fraction of trips falling in each bucket). */
+
+select round(sum(if(tip_amount>=0 and tip_amount<5,1,0))/count(*),3) as bin_0_5, round(sum(if(tip_amount>=5 and tip_amount<10,1,0))/count(*),3) as bin_5_10,
+round(sum(if(tip_amount>=10 and tip_amount<15,1,0))/count(*),3) as bin_10_15, round(sum(if(tip_amount>=15 and tip_amount<20,1,0))/count(*),3) as bin_15_20,
+round(sum(if(tip_amount>=20,1,0))/count(*),3) as bin_above_20     
+from (
+	select tip_amount
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and tip_amount>=0 and yr=2017 and mnth=11
+	union all
+	select tip_amount
+	from yellow_trip_Nov_Dec_partitioned_orc
+	where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and tip_amount>=0 and yr=2017 and mnth=12
+     )a;
+
+
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 3: Which month has a greater average ‘speed’ - November or December? Note that the variable ‘speed’ will have to be derived from other metrics. */
+
+select round(avg(trip_distance/( (unix_timestamp(tpep_dropoff_datetime)-unix_timestamp(tpep_pickup_datetime))/(60*60))),2) as Nov_avg_speed
+from yellow_trip_Nov_Dec_partitioned_orc where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and trip_distance>0 and yr=2017 and mnth=11;
+
+select round(avg(trip_distance/( (unix_timestamp(tpep_dropoff_datetime)-unix_timestamp(tpep_pickup_datetime))/(60*60))),2) as Dec_avg_speed
+from yellow_trip_Nov_Dec_partitioned_orc where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and trip_distance>0 and yr=2017 and mnth=12;
+
+/* Result: November 2017 has slightly higer average speed than December 2017 */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+/* Assignment Question 4: Analyse the average speed of the most happening days of the year i.e. 31st December (New year’s eve) and 25th December (Christmas Eve) and compare it with the overall average.  */
+
+select round(avg(trip_distance/( (unix_timestamp(tpep_dropoff_datetime)-unix_timestamp(tpep_pickup_datetime))/(60*60))),2) as Dec_25_avg_speed
+from yellow_trip_Nov_Dec_partitioned_orc where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and trip_distance>0 and yr=2017 and mnth=12 and day(tpep_pickup_datetime)=25;
+
+select round(avg(trip_distance/( (unix_timestamp(tpep_dropoff_datetime)-unix_timestamp(tpep_pickup_datetime))/(60*60))),2) as Dec_31_avg_speed
+from yellow_trip_Nov_Dec_partitioned_orc where unix_timestamp(tpep_dropoff_datetime)>unix_timestamp(tpep_pickup_datetime) and trip_distance>0 and yr=2017 and mnth=12 and day(tpep_pickup_datetime)=31;
+
+/* Result: Dec 25th & 31st have higer average speed compared to Dec & Nov average speeds */
+
+/* ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- */
